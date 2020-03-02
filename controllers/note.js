@@ -1,14 +1,16 @@
-const Thing = require('../models/thing');
+const Note = require('../models/note');
 
-exports.createThing = (req, res, next) => {
-  const thing = new Thing({
+exports.createNote = (req, res, next) => {
+  const note = new Note({
     title: req.body.title,
     description: req.body.description,
-    imageUrl: req.body.imageUrl,
-    price: req.body.price,
-    userId: req.body.userId
+    imageId: req.body.imageId,
+    userId: req.body.userId,
+    privateFlag: req.body.privateFlag
   });
-  thing.save().then(
+  console.log("Note Created",note);
+  
+  note.save().then(
     () => {
       res.status(201).json({
         message: 'Post saved successfully!'
@@ -23,12 +25,12 @@ exports.createThing = (req, res, next) => {
   );
 };
 
-exports.getOneThing = (req, res, next) => {
-  Thing.findOne({
+exports.getOneNote = (req, res, next) => {
+  Note.findOne({
     _id: req.params.id
   }).then(
-    (thing) => {
-      res.status(200).json(thing);
+    (note) => {
+      res.status(200).json(note);
     }
   ).catch(
     (error) => {
@@ -39,8 +41,8 @@ exports.getOneThing = (req, res, next) => {
   );
 };
 
-exports.modifyThing = (req, res, next) => {
-  const thing = new Thing({
+exports.modifyNote = (req, res, next) => {
+  const note = new Note({
     _id: req.params.id,
     title: req.body.title,
     description: req.body.description,
@@ -48,10 +50,10 @@ exports.modifyThing = (req, res, next) => {
     price: req.body.price,
     userId: req.body.userId
   });
-  Thing.updateOne({_id: req.params.id}, thing).then(
+  Note.updateOne({_id: req.params.id}, note).then(
     () => {
       res.status(201).json({
-        message: 'Thing updated successfully!'
+        message: 'Note updated successfully!'
       });
     }
   ).catch(
@@ -63,8 +65,8 @@ exports.modifyThing = (req, res, next) => {
   );
 };
 
-exports.deleteThing = (req, res, next) => {
-  Thing.deleteOne({_id: req.params.id}).then(
+exports.deleteNote = (req, res, next) => {
+  Note.deleteOne({_id: req.params.id}).then(
     () => {
       res.status(200).json({
         message: 'Deleted!'
@@ -79,10 +81,10 @@ exports.deleteThing = (req, res, next) => {
   );
 };
 
-exports.getAllStuff = (req, res, next) => {
-  Thing.find().then(
-    (things) => {
-      res.status(200).json(things);
+exports.getAllNotes = (req, res, next) => {
+  Note.find().then(
+    (notes) => {
+      res.status(200).json(notes);
     }
   ).catch(
     (error) => {
