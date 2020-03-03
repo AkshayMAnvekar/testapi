@@ -1,8 +1,8 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
-const noteRoutes = require('./routes/note');
-const userRoutes = require('./routes/user');
+const noteRoutes = require('../routes/note');
+const userRoutes = require('../routes/user');
 
 const app = express();
 app.disable("X-Powered-By")
