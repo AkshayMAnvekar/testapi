@@ -1,4 +1,6 @@
 const Note = require('../models/note');
+const Img = require('../models/image');
+const fs = require('fs');
 
 exports.createNote = (req, res, next) => {
   const note = new Note({
@@ -82,7 +84,11 @@ exports.deleteNote = (req, res, next) => {
 };
 
 exports.getAllNotes = (req, res, next) => {
-  Note.find().then(
+  console.log(res.locals);
+  var privateFilter = (!res.locals.authenticated) ? false : ''
+  var searchQuery = (req.query.search) ? { $regex: req.query.search, $options: 'i' } : {} 
+  Note.find({ title: searchQuery, privateFlag: privateFilter }
+  ).then(
     (notes) => {
       res.status(200).json(notes);
     }
@@ -96,8 +102,24 @@ exports.getAllNotes = (req, res, next) => {
 };
 
 exports.test = (req, res, next) => {
-  console.log(req.body);
-  res.status(200).json({
-    message: 'Recieved!'
+  const img = new Img({
+    fileName: req.file.originalname.split(' ').join('_'),
+    data: Buffer.from(req.file.buffer),
+    contentType: req.file.mimetype
   });
+  console.log("Image added Created",img);
+  console.log("Image added Created",req.headers);
+  img.save().then(
+    () => {
+      res.status(201).json({
+        message: 'Image saved successfully!'
+      });
+    }
+  ).catch(
+    (error) => {
+      res.status(400).json({
+        error: error
+      });
+    }
+  );
  };

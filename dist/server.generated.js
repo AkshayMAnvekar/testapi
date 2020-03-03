@@ -94,7 +94,7 @@ module.exports =
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-eval("const Note = __webpack_require__(/*! ../models/note */ \"./models/note.js\");\n\nexports.createNote = (req, res, next) => {\n  const note = new Note({\n    title: req.body.title,\n    description: req.body.description,\n    imageId: req.body.imageId,\n    userId: req.body.userId,\n    privateFlag: req.body.privateFlag\n  });\n  console.log(\"Note Created\", note);\n  note.save().then(() => {\n    res.status(201).json({\n      message: 'Post saved successfully!'\n    });\n  }).catch(error => {\n    res.status(400).json({\n      error: error\n    });\n  });\n};\n\nexports.getOneNote = (req, res, next) => {\n  Note.findOne({\n    _id: req.params.id\n  }).then(note => {\n    res.status(200).json(note);\n  }).catch(error => {\n    res.status(404).json({\n      error: error\n    });\n  });\n};\n\nexports.modifyNote = (req, res, next) => {\n  const note = new Note({\n    _id: req.params.id,\n    title: req.body.title,\n    description: req.body.description,\n    imageUrl: req.body.imageUrl,\n    price: req.body.price,\n    userId: req.body.userId\n  });\n  Note.updateOne({\n    _id: req.params.id\n  }, note).then(() => {\n    res.status(201).json({\n      message: 'Note updated successfully!'\n    });\n  }).catch(error => {\n    res.status(400).json({\n      error: error\n    });\n  });\n};\n\nexports.deleteNote = (req, res, next) => {\n  Note.deleteOne({\n    _id: req.params.id\n  }).then(() => {\n    res.status(200).json({\n      message: 'Deleted!'\n    });\n  }).catch(error => {\n    res.status(400).json({\n      error: error\n    });\n  });\n};\n\nexports.getAllNotes = (req, res, next) => {\n  Note.find().then(notes => {\n    res.status(200).json(notes);\n  }).catch(error => {\n    res.status(400).json({\n      error: error\n    });\n  });\n};\n\nexports.test = (req, res, next) => {\n  console.log(req.body);\n  res.status(200).json({\n    message: 'Recieved!'\n  });\n};\n\n//# sourceURL=webpack:///./controllers/note.js?");
+eval("const Note = __webpack_require__(/*! ../models/note */ \"./models/note.js\");\n\nconst Img = __webpack_require__(/*! ../models/image */ \"./models/image.js\");\n\nconst fs = __webpack_require__(/*! fs */ \"fs\");\n\nexports.createNote = (req, res, next) => {\n  const note = new Note({\n    title: req.body.title,\n    description: req.body.description,\n    imageId: req.body.imageId,\n    userId: req.body.userId,\n    privateFlag: req.body.privateFlag\n  });\n  console.log(\"Note Created\", note);\n  note.save().then(() => {\n    res.status(201).json({\n      message: 'Post saved successfully!'\n    });\n  }).catch(error => {\n    res.status(400).json({\n      error: error\n    });\n  });\n};\n\nexports.getOneNote = (req, res, next) => {\n  Note.findOne({\n    _id: req.params.id\n  }).then(note => {\n    res.status(200).json(note);\n  }).catch(error => {\n    res.status(404).json({\n      error: error\n    });\n  });\n};\n\nexports.modifyNote = (req, res, next) => {\n  const note = new Note({\n    _id: req.params.id,\n    title: req.body.title,\n    description: req.body.description,\n    imageUrl: req.body.imageUrl,\n    price: req.body.price,\n    userId: req.body.userId\n  });\n  Note.updateOne({\n    _id: req.params.id\n  }, note).then(() => {\n    res.status(201).json({\n      message: 'Note updated successfully!'\n    });\n  }).catch(error => {\n    res.status(400).json({\n      error: error\n    });\n  });\n};\n\nexports.deleteNote = (req, res, next) => {\n  Note.deleteOne({\n    _id: req.params.id\n  }).then(() => {\n    res.status(200).json({\n      message: 'Deleted!'\n    });\n  }).catch(error => {\n    res.status(400).json({\n      error: error\n    });\n  });\n};\n\nexports.getAllNotes = (req, res, next) => {\n  console.log(res.locals);\n  var privateFilter = !res.locals.authenticated ? false : '';\n  var searchQuery = req.query.search ? {\n    $regex: req.query.search,\n    $options: 'i'\n  } : {};\n  Note.find({\n    title: searchQuery,\n    privateFlag: privateFilter\n  }).then(notes => {\n    res.status(200).json(notes);\n  }).catch(error => {\n    res.status(400).json({\n      error: error\n    });\n  });\n};\n\nexports.test = (req, res, next) => {\n  const img = new Img({\n    fileName: req.file.originalname.split(' ').join('_'),\n    data: Buffer.from(req.file.buffer),\n    contentType: req.file.mimetype\n  });\n  console.log(\"Image added Created\", img);\n  console.log(\"Image added Created\", req.headers);\n  img.save().then(() => {\n    res.status(201).json({\n      message: 'Image saved successfully!'\n    });\n  }).catch(error => {\n    res.status(400).json({\n      error: error\n    });\n  });\n};\n\n//# sourceURL=webpack:///./controllers/note.js?");
 
 /***/ }),
 
@@ -116,7 +116,7 @@ eval("const bcrypt = __webpack_require__(/*! bcrypt */ \"bcrypt\");\n\nconst Use
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-eval("const jwt = __webpack_require__(/*! jsonwebtoken */ \"jsonwebtoken\");\n\nmodule.exports = (req, res, next) => {\n  try {\n    const token = req.headers.authorization.split(' ')[1];\n    const decodedToken = jwt.verify(token, 'RANDOM_TOKEN_SECRET');\n    const userId = decodedToken.userId;\n\n    if (req.body.userId && req.body.userId !== userId) {\n      throw 'Invalid user ID';\n    } else {\n      next();\n    }\n  } catch {\n    res.status(401).json({\n      error: new Error('Invalid request!')\n    });\n  }\n};\n\n//# sourceURL=webpack:///./middleware/auth.js?");
+eval("const jwt = __webpack_require__(/*! jsonwebtoken */ \"jsonwebtoken\");\n\nmodule.exports = (req, res, next) => {\n  if (req.headers.authorization) {\n    try {\n      const token = req.headers.authorization.split(' ')[1];\n      const decodedToken = jwt.verify(token, 'RANDOM_TOKEN_SECRET');\n      const userId = decodedToken.userId;\n\n      if (req.body.userId && req.body.userId !== userId) {\n        throw 'Invalid user ID';\n      } else {\n        res.locals.user = userId;\n        res.locals.authenticated = true;\n        next();\n      }\n    } catch {\n      res.status(401).json({\n        error: new Error('Invalid request!')\n      });\n    }\n  } else {\n    next();\n  }\n};\n\n//# sourceURL=webpack:///./middleware/auth.js?");
 
 /***/ }),
 
@@ -127,7 +127,18 @@ eval("const jwt = __webpack_require__(/*! jsonwebtoken */ \"jsonwebtoken\");\n\n
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-eval("const multer = __webpack_require__(/*! multer */ \"multer\");\n\nconst MIME_TYPES = {\n  'image/jpg': 'jpg',\n  'image/jpeg': 'jpg',\n  'image/png': 'png'\n};\nconst storage = multer.diskStorage({\n  destination: (req, file, callback) => {\n    callback(null, './images');\n  },\n  filename: (req, file, callback) => {\n    const name = file.originalname.split(' ').join('_');\n    const extension = MIME_TYPES[file.mimetype];\n    callback(null, name + Date.now() + '.' + extension);\n  }\n});\nmodule.exports = multer({\n  storage: storage\n}).single('image');\n\n//# sourceURL=webpack:///./middleware/multer-config.js?");
+eval("const multer = __webpack_require__(/*! multer */ \"multer\"); // const MIME_TYPES = {\n//   'image/jpg': 'jpg',\n//   'image/jpeg': 'jpg',\n//   'image/png': 'png'\n// };\n// const storage = multer.diskStorage({\n//   destination: (req, file, callback) => {\n//     callback(null, './images');\n//   },\n//   filename: (req, file, callback) => {\n//     const name = file.originalname.split(' ').join('_');\n//     const extension = MIME_TYPES[file.mimetype];\n//     callback(null, name + Date.now() + '.' + extension);\n//   }\n// });\n\n\nconst storage = multer.memoryStorage();\nmodule.exports = multer({\n  storage: storage\n}).single('image');\n\n//# sourceURL=webpack:///./middleware/multer-config.js?");
+
+/***/ }),
+
+/***/ "./models/image.js":
+/*!*************************!*\
+  !*** ./models/image.js ***!
+  \*************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+eval("const mongoose = __webpack_require__(/*! mongoose */ \"mongoose\");\n\nconst imgSchema = mongoose.Schema({\n  fileName: {\n    type: String,\n    required: true\n  },\n  data: {\n    type: Buffer,\n    required: true\n  },\n  contentType: {\n    type: String,\n    required: true\n  }\n});\nmodule.exports = mongoose.model('Img', imgSchema);\n\n//# sourceURL=webpack:///./models/image.js?");
 
 /***/ }),
 
@@ -160,7 +171,7 @@ eval("const mongoose = __webpack_require__(/*! mongoose */ \"mongoose\");\n\ncon
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-eval("const express = __webpack_require__(/*! express */ \"express\");\n\nconst router = express.Router();\n\nconst auth = __webpack_require__(/*! ../middleware/auth */ \"./middleware/auth.js\");\n\nconst multer = __webpack_require__(/*! ../middleware/multer-config */ \"./middleware/multer-config.js\");\n\nconst noteCtrl = __webpack_require__(/*! ../controllers/note */ \"./controllers/note.js\");\n\nrouter.get('/', auth, noteCtrl.getAllNotes);\nrouter.post('/', auth, noteCtrl.createNote);\nrouter.post('/test', auth, multer, noteCtrl.test);\nrouter.get('/:id', auth, noteCtrl.getOneNote);\nrouter.put('/:id', auth, noteCtrl.modifyNote);\nrouter.delete('/:id', auth, noteCtrl.deleteNote);\nmodule.exports = router;\n\n//# sourceURL=webpack:///./routes/note.js?");
+eval("const express = __webpack_require__(/*! express */ \"express\");\n\nconst router = express.Router();\n\nconst auth = __webpack_require__(/*! ../middleware/auth */ \"./middleware/auth.js\");\n\nconst multer = __webpack_require__(/*! ../middleware/multer-config */ \"./middleware/multer-config.js\");\n\nconst noteCtrl = __webpack_require__(/*! ../controllers/note */ \"./controllers/note.js\"); // const AuthMiddleware = (req, res, next) => {\n//   if(req.headers.hasOwnProperty(\"authorization\")) {\n//     return auth(req, res, next);\n//   } else {\n//       next();\n//   }\n// }\n\n\nrouter.get('/', auth, noteCtrl.getAllNotes);\nrouter.post('/', auth, noteCtrl.createNote);\nrouter.post('/test', auth, multer, noteCtrl.test);\nrouter.get('/:id', auth, noteCtrl.getOneNote);\nrouter.put('/:id', auth, noteCtrl.modifyNote);\nrouter.delete('/:id', auth, noteCtrl.deleteNote);\nmodule.exports = router;\n\n//# sourceURL=webpack:///./routes/note.js?");
 
 /***/ }),
 
@@ -204,7 +215,7 @@ eval("const http = __webpack_require__(/*! http */ \"http\");\n\nconst app = __w
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-eval("__webpack_require__(/*! babel-polyfill */\"babel-polyfill\");\nmodule.exports = __webpack_require__(/*! D:\\Work\\GIT\\Javascript\\backendapi\\server\\server.js */\"./server/server.js\");\n\n\n//# sourceURL=webpack:///multi_babel-polyfill_./server/server.js?");
+eval("__webpack_require__(/*! babel-polyfill */\"babel-polyfill\");\nmodule.exports = __webpack_require__(/*! /Volumes/Akshay/MyScripts/JS/node/testapi/server/server.js */\"./server/server.js\");\n\n\n//# sourceURL=webpack:///multi_babel-polyfill_./server/server.js?");
 
 /***/ }),
 
@@ -249,6 +260,17 @@ eval("module.exports = require(\"body-parser\");\n\n//# sourceURL=webpack:///ext
 /***/ (function(module, exports) {
 
 eval("module.exports = require(\"express\");\n\n//# sourceURL=webpack:///external_%22express%22?");
+
+/***/ }),
+
+/***/ "fs":
+/*!*********************!*\
+  !*** external "fs" ***!
+  \*********************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+eval("module.exports = require(\"fs\");\n\n//# sourceURL=webpack:///external_%22fs%22?");
 
 /***/ }),
 
