@@ -9,7 +9,7 @@ module.exports = (req, res, next) => {
       if (req.body.userId && req.body.userId !== userId) {
         throw 'Invalid user ID';
       } else {
-        res.locals.user = userId;
+        res.locals.user = req.body.userId;
         res.locals.authenticated = true;
         next();
       }
@@ -19,6 +19,8 @@ module.exports = (req, res, next) => {
       });
     }
   } else {
+    res.locals.user = req.body.userId;
+    res.locals.authenticated = false;
     next();
   }
 };

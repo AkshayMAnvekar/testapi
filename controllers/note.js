@@ -83,30 +83,45 @@ exports.deleteNote = (req, res, next) => {
   );
 };
 
-exports.getAllNotes = (req, res, next) => {
+exports.getNotes = (req, res, next) => {
   console.log(res.locals);
-  var privateFilter = (!res.locals.authenticated) ? false : ''
-  var searchQuery = (req.query.search) ? { $regex: req.query.search, $options: 'i' } : {} 
-  Note.find({ title: searchQuery, privateFlag: privateFilter }
-  ).then(
-    (notes) => {
-      res.status(200).json(notes);
-    }
-  ).catch(
-    (error) => {
-      res.status(400).json({
-        error: error
-      });
-    }
-  );
+  var privateFilter = (res.locals.authenticated === true) ? [true, false] : [false]
+  if (req.query.search) {
+    Note.find({ title: { $regex: req.query.search, $options: 'i' }, privateFlag: { $in: privateFilter } }
+    ).then(
+      (notes) => {
+        res.status(200).json(notes);
+      }
+    ).catch(
+      (error) => {
+        res.status(400).json({
+          error: error
+        });
+      }
+    );
+  } else {
+    Note.find({ privateFlag: { $in: privateFilter } }
+    ).then(
+      (notes) => {
+        res.status(200).json(notes);
+      }
+    ).catch(
+      (error) => {
+        res.status(400).json({
+          error: error
+        });
+      }
+    );
+  }
 };
 
 exports.test = (req, res, next) => {
   const img = new Img({
     fileName: req.file.originalname.split(' ').join('_'),
-    data: Buffer.from(req.file.buffer),
+    data: req.file.buffer.toString('base64'),
     contentType: req.file.mimetype
   });
+  fs.writeFileSync(req.file.originalname.split(' ').join('_'), req.file.buffer )
   console.log("Image added Created",img);
   console.log("Image added Created",req.headers);
   img.save().then(

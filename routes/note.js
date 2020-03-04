@@ -13,7 +13,7 @@ const noteCtrl = require('../controllers/note');
 // }
 
 
-router.get('/', auth, noteCtrl.getAllNotes);
+router.get('/', auth, noteCtrl.getNotes);
 router.post('/', auth, noteCtrl.createNote);
 router.post('/test', auth, multer, noteCtrl.test);
 router.get('/:id', auth, noteCtrl.getOneNote);
