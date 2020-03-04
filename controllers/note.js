@@ -118,17 +118,35 @@ exports.getNotes = (req, res, next) => {
 exports.test = (req, res, next) => {
   const img = new Img({
     fileName: req.file.originalname.split(' ').join('_'),
-    data: req.file.buffer.toString('base64'),
+    data: req.file.buffer,
     contentType: req.file.mimetype
-  });
-  fs.writeFileSync(req.file.originalname.split(' ').join('_'), req.file.buffer )
-  console.log("Image added Created",img);
-  console.log("Image added Created",req.headers);
+  });  
+  // fs.writeFileSync(req.file.originalname.split(' ').join('_'), req.file.buffer )
+  // console.log("Image added Created",img);
+  // console.log("Image added Created",req.headers);
   img.save().then(
     () => {
-      res.status(201).json({
-        message: 'Image saved successfully!'
+      const note = new Note({
+        title: req.body.title,
+        description: req.body.description,
+        imageId: img.id,
+        userId: req.body.userId,
+        privateFlag: req.body.privateFlag
       });
+      console.log("Note Created",note);
+      note.save().then(
+        () => {
+          res.status(201).json({
+            message: 'Post saved successfully!'
+          });
+        }
+      ).catch(
+        (error) => {
+          res.status(400).json({
+            error: error
+          });
+        }
+      );
     }
   ).catch(
     (error) => {
