@@ -1,22 +1,35 @@
 const Note = require('../models/note');
 const Img = require('../models/image');
-const fs = require('fs');
 
 exports.createNote = (req, res, next) => {
-  const note = new Note({
-    title: req.body.title,
-    description: req.body.description,
-    imageId: req.body.imageId,
-    userId: req.body.userId,
-    privateFlag: req.body.privateFlag
+  const img = new Img({
+    fileName: req.file.originalname.split(' ').join('_'),
+    data: req.file.buffer,
+    contentType: req.file.mimetype
   });
-  console.log("Note Created",note);
-  
-  note.save().then(
+  img.save().then(
     () => {
-      res.status(201).json({
-        message: 'Post saved successfully!'
+      const note = new Note({
+        title: req.body.title,
+        description: req.body.description,
+        imageId: img.id,
+        userId: req.body.userId,
+        privateFlag: req.body.privateFlag
       });
+      console.log("Note Created", note);
+      note.save().then(
+        () => {
+          res.status(201).json({
+            message: 'Post saved successfully!'
+          });
+        }
+      ).catch(
+        (error) => {
+          res.status(400).json({
+            error: error
+          });
+        }
+      );
     }
   ).catch(
     (error) => {
@@ -26,6 +39,31 @@ exports.createNote = (req, res, next) => {
     }
   );
 };
+
+// exports.createNote = (req, res, next) => {
+//   const note = new Note({
+//     title: req.body.title,
+//     description: req.body.description,
+//     imageId: req.body.imageId,
+//     userId: req.body.userId,
+//     privateFlag: req.body.privateFlag
+//   });
+//   console.log("Note Created",note);
+  
+//   note.save().then(
+//     () => {
+//       res.status(201).json({
+//         message: 'Post saved successfully!'
+//       });
+//     }
+//   ).catch(
+//     (error) => {
+//       res.status(400).json({
+//         error: error
+//       });
+//     }
+//   );
+// };
 
 exports.getOneNote = (req, res, next) => {
   Note.findOne({
@@ -85,11 +123,13 @@ exports.deleteNote = (req, res, next) => {
 
 exports.getNotes = (req, res, next) => {
   console.log(res.locals);
+  console.log(req.body.search);
   var privateFilter = (res.locals.authenticated === true) ? [true, false] : [false]
-  if (req.query.search) {
-    Note.find({ title: { $regex: req.query.search, $options: 'i' }, privateFlag: { $in: privateFilter } }
+  if (req.query.search || req.body.search) {
+    var searchQuery = req.query.search || req.body.search
+    Note.find({ title: { $regex: searchQuery, $options: 'i' }, privateFlag: { $in: privateFilter } }
     ).then(
-      (notes) => {
+      (notes) => {        
         res.status(200).json(notes);
       }
     ).catch(
@@ -115,44 +155,3 @@ exports.getNotes = (req, res, next) => {
   }
 };
 
-exports.test = (req, res, next) => {
-  const img = new Img({
-    fileName: req.file.originalname.split(' ').join('_'),
-    data: req.file.buffer,
-    contentType: req.file.mimetype
-  });  
-  // fs.writeFileSync(req.file.originalname.split(' ').join('_'), req.file.buffer )
-  // console.log("Image added Created",img);
-  // console.log("Image added Created",req.headers);
-  img.save().then(
-    () => {
-      const note = new Note({
-        title: req.body.title,
-        description: req.body.description,
-        imageId: img.id,
-        userId: req.body.userId,
-        privateFlag: req.body.privateFlag
-      });
-      console.log("Note Created",note);
-      note.save().then(
-        () => {
-          res.status(201).json({
-            message: 'Post saved successfully!'
-          });
-        }
-      ).catch(
-        (error) => {
-          res.status(400).json({
-            error: error
-          });
-        }
-      );
-    }
-  ).catch(
-    (error) => {
-      res.status(400).json({
-        error: error
-      });
-    }
-  );
- };

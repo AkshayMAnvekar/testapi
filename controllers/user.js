@@ -26,9 +26,7 @@ exports.signup = (req, res, next) => {
   );
 };
 
-exports.login = (req, res, next) => {
-  console.log('test',req.body);
-  
+exports.login = (req, res, next) => {  
   User.findOne({ email: req.body.email }).then(
     (user) => {
       if (!user) {
