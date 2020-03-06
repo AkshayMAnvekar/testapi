@@ -121,16 +121,42 @@ exports.deleteNote = (req, res, next) => {
   );
 };
 
-exports.getNotes = (req, res, next) => {
+exports.getNotes = async (req, res, next) => {
   console.log(res.locals);
   console.log(req.body.search);
-  var privateFilter = (res.locals.authenticated === true) ? [true, false] : [false]
+  const privateFilter = (res.locals.authenticated === true) ? [true, false] : [false];
+  const pageNo = (req.query.page)? parseInt(req.query.page) : 1;
+  const rowSize = (req.query.size)? parseInt(req.query.size) : 10;
+  const skipVal = (pageNo-1)*rowSize;
+  const result = []
   if (req.query.search || req.body.search) {
-    var searchQuery = req.query.search || req.body.search
-    Note.find({ title: { $regex: searchQuery, $options: 'i' }, privateFlag: { $in: privateFilter } }
+    const searchQuery = req.query.search || req.body.search
+    Note.find({ title: { $regex: searchQuery, $options: 'i' }, privateFlag: { $in: privateFilter } }, null, { limit: rowSize, skip: skipVal }
     ).then(
-      (notes) => {        
-        res.status(200).json(notes);
+      async (notes) => { 
+        for await (eNote of notes) {
+          eNote.imageData = await Img.findOne({
+            _id: eNote.imageId
+          })
+          // .then(
+          //   (img) => {
+          //     eNote.imageData = img
+          //     console.log(img);
+          //     result.push(eNote)
+          //   })
+            .catch(
+            (error) => {
+              res.status(404).json({
+                error: error
+              });
+            }
+          );
+          result.push(eNote)
+          delete eNote.imageId;
+          
+        }
+        console.log(result);
+        res.status(200).json(result);
       }
     ).catch(
       (error) => {
@@ -140,7 +166,7 @@ exports.getNotes = (req, res, next) => {
       }
     );
   } else {
-    Note.find({ privateFlag: { $in: privateFilter } }
+    Note.find({ privateFlag: { $in: privateFilter } }, null, { limit: rowSize, skip: skipVal }
     ).then(
       (notes) => {
         res.status(200).json(notes);
