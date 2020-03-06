@@ -1,1 +1,343 @@
-module.exports=function(e){var t={};function r(o){if(t[o])return t[o].exports;var s=t[o]={i:o,l:!1,exports:{}};return e[o].call(s.exports,s,s.exports,r),s.l=!0,s.exports}return r.m=e,r.c=t,r.d=function(e,t,o){r.o(e,t)||Object.defineProperty(e,t,{enumerable:!0,get:o})},r.r=function(e){"undefined"!=typeof Symbol&&Symbol.toStringTag&&Object.defineProperty(e,Symbol.toStringTag,{value:"Module"}),Object.defineProperty(e,"__esModule",{value:!0})},r.t=function(e,t){if(1&t&&(e=r(e)),8&t)return e;if(4&t&&"object"==typeof e&&e&&e.__esModule)return e;var o=Object.create(null);if(r.r(o),Object.defineProperty(o,"default",{enumerable:!0,value:e}),2&t&&"string"!=typeof e)for(var s in e)r.d(o,s,function(t){return e[t]}.bind(null,s));return o},r.n=function(e){var t=e&&e.__esModule?function(){return e.default}:function(){return e};return r.d(t,"a",t),t},r.o=function(e,t){return Object.prototype.hasOwnProperty.call(e,t)},r.p="/dist/",r(r.s=4)}([function(e,t){e.exports=require("mongoose")},function(e,t){e.exports=require("express")},function(e,t){e.exports=require("jsonwebtoken")},function(e,t,r){const o=r(0),s=o.Schema({fileName:{type:String,required:!0},data:{type:Buffer,required:!0},contentType:{type:String,required:!0}});e.exports=o.model("Img",s)},function(e,t,r){r(5),e.exports=r(6)},function(e,t){e.exports=require("babel-polyfill")},function(e,t,r){const o=r(7),s=r(8),n=(r(0),(e=>{const t=parseInt(e,10);return isNaN(t)?e:t>=0&&t})(process.env.PORT||"3000"));s.set("port",n);const i=o.createServer(s);i.on("error",e=>{if("listen"!==e.syscall)throw e;const t=i.address(),r="string"==typeof t?"pipe "+t:"port: "+n;switch(e.code){case"EACCES":console.error(r+" requires elevated privileges."),process.exit(1);break;case"EADDRINUSE":console.error(r+" is already in use."),process.exit(1);break;default:throw e}}),i.on("listening",()=>{const e=i.address(),t="string"==typeof e?"pipe "+e:"port "+n;console.log("Listening on "+t)}),i.listen(n)},function(e,t){e.exports=require("http")},function(e,t,r){const o=r(1),s=r(9),n=r(0),i=r(10),a=r(17),u=o();u.disable("X-Powered-By"),n.connect("mongodb+srv://anv:IPTiGtk3bPsMxAk7@adb-2mbax.mongodb.net/test?retryWrites=true&w=majority",{useUnifiedTopology:!0,useNewUrlParser:!0,useCreateIndex:!0}).then(()=>{console.log("Successfully connected to MongoDB Atlas!")}).catch(e=>{console.log("Unable to connect to MongoDB Atlas!"),console.error(e)}),u.use((e,t,r)=>{t.setHeader("Access-Control-Allow-Origin","*"),t.setHeader("Access-Control-Allow-Headers","Origin, X-Requested-With, Content, Accept, Content-Type, Authorization"),t.setHeader("Access-Control-Allow-Methods","GET, POST, PUT, DELETE, PATCH, OPTIONS"),r()}),u.use(s.json()),u.use("/api/note",i),u.use("/api/auth",a),e.exports=u},function(e,t){e.exports=require("body-parser")},function(e,t,r){const o=r(1).Router(),s=r(11),n=r(12),i=r(14);o.get("/",s,i.getNotes),o.post("/",s,n,i.createNote),o.get("/:id",s,i.getOneNote),o.put("/:id",s,i.modifyNote),o.delete("/:id",s,i.deleteNote),e.exports=o},function(e,t,r){const o=r(2);e.exports=(e,t,r)=>{if(e.headers.authorization)try{const s=e.headers.authorization.split(" ")[1],n=o.verify(s,"RANDOM_TOKEN_SECRET").userId;if(e.body.userId&&e.body.userId!==n)throw"Invalid user ID";t.locals.user=e.body.userId,t.locals.authenticated=!0,r()}catch{t.status(401).json({error:new Error("Invalid request!")})}else t.locals.user=e.body.userId,t.locals.authenticated=!1,r()}},function(e,t,r){const o=r(13),s=o.memoryStorage();e.exports=o({storage:s}).single("image")},function(e,t){e.exports=require("multer")},function(e,t,r){const o=r(15),s=r(3),n=r(16);t.createNote=(e,t,r)=>{if(t.locals.authenticated){const r=new s({fileName:e.file.originalname.split(" ").join("_"),data:e.file.buffer,contentType:e.file.mimetype});r.save().then(()=>{const s=new o({title:e.body.title,description:e.body.description,imageId:r.id,userId:e.body.userId,privateFlag:e.body.privateFlag});console.log("Note Created",s),s.save().then(()=>{t.status(201).json({message:"Post saved successfully!"})}).catch(e=>{t.status(400).json({error:e})})}).catch(e=>{t.status(400).json({error:e})})}else t.status(401).json({error:new Error("Unauthorized request!")})},t.getOneNote=(e,t,r)=>{o.findOne({_id:e.params.id}).then(e=>{t.status(200).json(e)}).catch(e=>{t.status(404).json({error:e})})},t.modifyNote=(e,t,r)=>{if(t.locals.authenticated){const r=new o({_id:e.params.id,title:e.body.title,description:e.body.description,imageUrl:e.body.imageUrl,price:e.body.price,userId:e.body.userId});o.updateOne({_id:e.params.id},r).then(()=>{t.status(201).json({message:"Note updated successfully!"})}).catch(e=>{t.status(400).json({error:e})})}else t.status(401).json({error:new Error("Unauthorized request!")})},t.deleteNote=(e,t,r)=>{t.locals.authenticated?o.deleteOne({_id:e.params.id}).then(()=>{t.status(200).json({message:"Deleted!"})}).catch(e=>{t.status(400).json({error:e})}):t.status(401).json({error:new Error("Unauthorized request!")})},t.getNotes=async(e,t,r)=>{const s=!0===t.locals.authenticated?[!0,!1]:[!1],i=e.query.page?parseInt(e.query.page):1,a=e.query.size?parseInt(e.query.size):10,u=(i-1)*a;if(e.query.search||e.body.search){const r=e.query.search||e.body.search;o.find({title:{$regex:r,$options:"i"},privateFlag:{$in:s}},null,{limit:a,skip:u}).then(async e=>{t.status(200).json(await n(e))}).catch(e=>{console.log(e),t.status(400).json({error:e})})}else o.find({privateFlag:{$in:s}},null,{limit:a,skip:u}).then(async e=>{t.status(200).json(await n(e))}).catch(e=>{t.status(400).json({error:e})})}},function(e,t,r){const o=r(0),s=o.Schema({title:{type:String,required:!0},description:{type:String,required:!0},imageId:{type:String,required:!0},userId:{type:String,required:!0},privateFlag:{type:Boolean,required:!0}});e.exports=o.model("Note",s)},function(e,t,r){const o=r(3);e.exports=async function(e){const t=[];for(everyNote of e)newNote={},newNote.id=everyNote._id,newNote.title=everyNote.title,newNote.description=everyNote.description,newNote.userId=everyNote.userId,newNote.privateFlag=everyNote.privateFlag,newNote.imageData=await o.findOne({_id:everyNote.imageId}).then(e=>({mimeType:e.contentType,imgData:e.data})).catch(e=>({error:e})),t.push(newNote);return t}},function(e,t,r){const o=r(1).Router(),s=r(18);o.post("/signup",s.signup),o.post("/login",s.login),e.exports=o},function(e,t,r){const o=r(19),s=r(20),n=r(2);t.signup=(e,t,r)=>{o.hash(e.body.password,10).then(r=>{new s({email:e.body.email,password:r}).save().then(()=>{t.status(201).json({message:"User added successfully!"})}).catch(e=>{t.status(500).json({error:e})})})},t.login=(e,t,r)=>{s.findOne({email:e.body.email}).then(r=>{if(!r)return t.status(401).json({error:new Error("User not found!")});o.compare(e.body.password,r.password).then(e=>{if(!e)return t.status(401).json({error:new Error("Incorrect password!")});const o=n.sign({userId:r._id},"RANDOM_TOKEN_SECRET",{expiresIn:"24h"});t.status(200).json({userId:r._id,token:o})}).catch(e=>{t.status(500).json({error:e})})}).catch(e=>{t.status(500).json({error:e})})}},function(e,t){e.exports=require("bcrypt")},function(e,t,r){const o=r(0),s=r(21),n=o.Schema({email:{type:String,required:!0,unique:!0},password:{type:String,required:!0}});n.plugin(s),e.exports=o.model("User",n)},function(e,t){e.exports=require("mongoose-unique-validator")}]);
+module.exports =
+/******/ (function(modules) { // webpackBootstrap
+/******/ 	// The module cache
+/******/ 	var installedModules = {};
+/******/
+/******/ 	// The require function
+/******/ 	function __webpack_require__(moduleId) {
+/******/
+/******/ 		// Check if module is in cache
+/******/ 		if(installedModules[moduleId]) {
+/******/ 			return installedModules[moduleId].exports;
+/******/ 		}
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = installedModules[moduleId] = {
+/******/ 			i: moduleId,
+/******/ 			l: false,
+/******/ 			exports: {}
+/******/ 		};
+/******/
+/******/ 		// Execute the module function
+/******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+/******/
+/******/ 		// Flag the module as loaded
+/******/ 		module.l = true;
+/******/
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+/******/
+/******/
+/******/ 	// expose the modules object (__webpack_modules__)
+/******/ 	__webpack_require__.m = modules;
+/******/
+/******/ 	// expose the module cache
+/******/ 	__webpack_require__.c = installedModules;
+/******/
+/******/ 	// define getter function for harmony exports
+/******/ 	__webpack_require__.d = function(exports, name, getter) {
+/******/ 		if(!__webpack_require__.o(exports, name)) {
+/******/ 			Object.defineProperty(exports, name, { enumerable: true, get: getter });
+/******/ 		}
+/******/ 	};
+/******/
+/******/ 	// define __esModule on exports
+/******/ 	__webpack_require__.r = function(exports) {
+/******/ 		if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+/******/ 			Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+/******/ 		}
+/******/ 		Object.defineProperty(exports, '__esModule', { value: true });
+/******/ 	};
+/******/
+/******/ 	// create a fake namespace object
+/******/ 	// mode & 1: value is a module id, require it
+/******/ 	// mode & 2: merge all properties of value into the ns
+/******/ 	// mode & 4: return value when already ns object
+/******/ 	// mode & 8|1: behave like require
+/******/ 	__webpack_require__.t = function(value, mode) {
+/******/ 		if(mode & 1) value = __webpack_require__(value);
+/******/ 		if(mode & 8) return value;
+/******/ 		if((mode & 4) && typeof value === 'object' && value && value.__esModule) return value;
+/******/ 		var ns = Object.create(null);
+/******/ 		__webpack_require__.r(ns);
+/******/ 		Object.defineProperty(ns, 'default', { enumerable: true, value: value });
+/******/ 		if(mode & 2 && typeof value != 'string') for(var key in value) __webpack_require__.d(ns, key, function(key) { return value[key]; }.bind(null, key));
+/******/ 		return ns;
+/******/ 	};
+/******/
+/******/ 	// getDefaultExport function for compatibility with non-harmony modules
+/******/ 	__webpack_require__.n = function(module) {
+/******/ 		var getter = module && module.__esModule ?
+/******/ 			function getDefault() { return module['default']; } :
+/******/ 			function getModuleExports() { return module; };
+/******/ 		__webpack_require__.d(getter, 'a', getter);
+/******/ 		return getter;
+/******/ 	};
+/******/
+/******/ 	// Object.prototype.hasOwnProperty.call
+/******/ 	__webpack_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };
+/******/
+/******/ 	// __webpack_public_path__
+/******/ 	__webpack_require__.p = "/dist/";
+/******/
+/******/
+/******/ 	// Load entry module and return exports
+/******/ 	return __webpack_require__(__webpack_require__.s = 0);
+/******/ })
+/************************************************************************/
+/******/ ({
+
+/***/ "./controllers/note.js":
+/*!*****************************!*\
+  !*** ./controllers/note.js ***!
+  \*****************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+eval("const Note = __webpack_require__(/*! ../models/note */ \"./models/note.js\");\n\nconst Img = __webpack_require__(/*! ../models/image */ \"./models/image.js\");\n\nconst imageUpdate = __webpack_require__(/*! ../functions/imageUpdate */ \"./functions/imageUpdate.js\");\n\nfunction sleep(ms) {\n  return new Promise(resolve => setTimeout(resolve, ms));\n}\n\nexports.createNote = (req, res, next) => {\n  if (!res.locals.authenticated) {\n    res.status(401).json({\n      error: new Error('Unauthorized request!')\n    });\n  } else {\n    const img = new Img({\n      fileName: req.file.originalname.split(' ').join('_'),\n      data: req.file.buffer,\n      contentType: req.file.mimetype\n    });\n    img.save().then(() => {\n      const note = new Note({\n        title: req.body.title,\n        description: req.body.description,\n        imageId: img.id,\n        userId: req.body.userId,\n        privateFlag: req.body.privateFlag\n      });\n      console.log(\"Note Created\", note);\n      note.save().then(() => {\n        res.status(201).json({\n          message: 'Post saved successfully!'\n        });\n      }).catch(error => {\n        res.status(400).json({\n          error: error\n        });\n      });\n    }).catch(error => {\n      res.status(400).json({\n        error: error\n      });\n    });\n  }\n};\n\nexports.getOneNote = (req, res, next) => {\n  Note.findOne({\n    _id: req.params.id\n  }).then(note => {\n    res.status(200).json(note);\n  }).catch(error => {\n    res.status(404).json({\n      error: error\n    });\n  });\n};\n\nexports.modifyNote = (req, res, next) => {\n  if (!res.locals.authenticated) {\n    res.status(401).json({\n      error: new Error('Unauthorized request!')\n    });\n  } else {\n    const note = new Note({\n      _id: req.params.id,\n      title: req.body.title,\n      description: req.body.description,\n      imageUrl: req.body.imageUrl,\n      price: req.body.price,\n      userId: req.body.userId\n    });\n    Note.updateOne({\n      _id: req.params.id\n    }, note).then(() => {\n      res.status(201).json({\n        message: 'Note updated successfully!'\n      });\n    }).catch(error => {\n      res.status(400).json({\n        error: error\n      });\n    });\n  }\n};\n\nexports.deleteNote = (req, res, next) => {\n  if (!res.locals.authenticated) {\n    res.status(401).json({\n      error: new Error('Unauthorized request!')\n    });\n  } else {\n    Note.deleteOne({\n      _id: req.params.id\n    }).then(() => {\n      res.status(200).json({\n        message: 'Deleted!'\n      });\n    }).catch(error => {\n      res.status(400).json({\n        error: error\n      });\n    });\n  }\n};\n\nexports.getNotes = async (req, res, next) => {\n  const privateFilter = res.locals.authenticated === true ? [true, false] : [false];\n  const pageNo = req.query.page ? parseInt(req.query.page) : 1;\n  const rowSize = req.query.size ? parseInt(req.query.size) : 10;\n  const skipVal = (pageNo - 1) * rowSize;\n\n  if (req.query.search || req.body.search) {\n    const searchQuery = req.query.search || req.body.search;\n    Note.find({\n      title: {\n        $regex: searchQuery,\n        $options: 'i'\n      },\n      privateFlag: {\n        $in: privateFilter\n      }\n    }, null, {\n      limit: rowSize,\n      skip: skipVal\n    }).then(async notes => {\n      res.status(200).json((await imageUpdate(notes)));\n    }).catch(error => {\n      console.log(error);\n      res.status(400).json({\n        error: error\n      });\n    });\n  } else {\n    Note.find({\n      privateFlag: {\n        $in: privateFilter\n      }\n    }, null, {\n      limit: rowSize,\n      skip: skipVal\n    }).then(async notes => {\n      res.status(200).json((await imageUpdate(notes)));\n    }).catch(error => {\n      res.status(400).json({\n        error: error\n      });\n    });\n  }\n};\n\n//# sourceURL=webpack:///./controllers/note.js?");
+
+/***/ }),
+
+/***/ "./controllers/user.js":
+/*!*****************************!*\
+  !*** ./controllers/user.js ***!
+  \*****************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+eval("const bcrypt = __webpack_require__(/*! bcrypt */ \"bcrypt\");\n\nconst User = __webpack_require__(/*! ../models/user */ \"./models/user.js\");\n\nconst jwt = __webpack_require__(/*! jsonwebtoken */ \"jsonwebtoken\");\n\nexports.signup = (req, res, next) => {\n  bcrypt.hash(req.body.password, 10).then(hash => {\n    const user = new User({\n      email: req.body.email,\n      password: hash\n    });\n    user.save().then(() => {\n      res.status(201).json({\n        message: 'User added successfully!'\n      });\n    }).catch(error => {\n      res.status(500).json({\n        error: error\n      });\n    });\n  });\n};\n\nexports.login = (req, res, next) => {\n  User.findOne({\n    email: req.body.email\n  }).then(user => {\n    if (!user) {\n      return res.status(401).json({\n        error: new Error('User not found!')\n      });\n    }\n\n    bcrypt.compare(req.body.password, user.password).then(valid => {\n      if (!valid) {\n        return res.status(401).json({\n          error: new Error('Incorrect password!')\n        });\n      }\n\n      const token = jwt.sign({\n        userId: user._id\n      }, 'RANDOM_TOKEN_SECRET', {\n        expiresIn: '24h'\n      });\n      res.status(200).json({\n        userId: user._id,\n        token: token\n      });\n    }).catch(error => {\n      res.status(500).json({\n        error: error\n      });\n    });\n  }).catch(error => {\n    res.status(500).json({\n      error: error\n    });\n  });\n};\n\n//# sourceURL=webpack:///./controllers/user.js?");
+
+/***/ }),
+
+/***/ "./functions/imageUpdate.js":
+/*!**********************************!*\
+  !*** ./functions/imageUpdate.js ***!
+  \**********************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+eval("const Img = __webpack_require__(/*! ../models/image */ \"./models/image.js\");\n\nasync function imageUpdate(data) {\n  const result = [];\n\n  for (everyNote of data) {\n    newNote = {};\n    newNote.id = everyNote._id;\n    newNote.title = everyNote.title;\n    newNote.description = everyNote.description;\n    newNote.userId = everyNote.userId;\n    newNote.privateFlag = everyNote.privateFlag;\n    newNote.imageData = await Img.findOne({\n      _id: everyNote.imageId\n    }).then(img => {\n      return {\n        mimeType: img.contentType,\n        imgData: img.data\n      };\n    }).catch(error => {\n      return {\n        error: error\n      };\n    });\n    result.push(newNote);\n  }\n\n  return result;\n}\n\n;\nmodule.exports = imageUpdate;\n\n//# sourceURL=webpack:///./functions/imageUpdate.js?");
+
+/***/ }),
+
+/***/ "./middleware/auth.js":
+/*!****************************!*\
+  !*** ./middleware/auth.js ***!
+  \****************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+eval("const jwt = __webpack_require__(/*! jsonwebtoken */ \"jsonwebtoken\");\n\n__webpack_require__(/*! dotenv */ \"dotenv\").config();\n\nmodule.exports = (req, res, next) => {\n  if (req.headers.authorization) {\n    try {\n      const token = req.headers.authorization.split(' ')[1];\n      const decodedToken = jwt.verify(token, process.env.AUTH_PASS_KEY);\n      const userId = decodedToken.userId;\n\n      if (req.body.userId && req.body.userId !== userId) {\n        throw 'Invalid user ID';\n      } else {\n        res.locals.user = req.body.userId;\n        res.locals.authenticated = true;\n        next();\n      }\n    } catch {\n      res.status(401).json({\n        error: new Error('Invalid request!')\n      });\n    }\n  } else {\n    res.locals.user = req.body.userId;\n    res.locals.authenticated = false;\n    next();\n  }\n};\n\n//# sourceURL=webpack:///./middleware/auth.js?");
+
+/***/ }),
+
+/***/ "./middleware/multer-config.js":
+/*!*************************************!*\
+  !*** ./middleware/multer-config.js ***!
+  \*************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+eval("const multer = __webpack_require__(/*! multer */ \"multer\"); // const MIME_TYPES = {\n//   'image/jpg': 'jpg',\n//   'image/jpeg': 'jpg',\n//   'image/png': 'png'\n// };\n// const storage = multer.diskStorage({\n//   destination: (req, file, callback) => {\n//     callback(null, './images');\n//   },\n//   filename: (req, file, callback) => {\n//     const name = file.originalname.split(' ').join('_');\n//     const extension = MIME_TYPES[file.mimetype];\n//     callback(null, name + Date.now() + '.' + extension);\n//   }\n// });\n\n\nconst storage = multer.memoryStorage();\nmodule.exports = multer({\n  storage: storage\n}).single('image');\n\n//# sourceURL=webpack:///./middleware/multer-config.js?");
+
+/***/ }),
+
+/***/ "./models/image.js":
+/*!*************************!*\
+  !*** ./models/image.js ***!
+  \*************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+eval("const mongoose = __webpack_require__(/*! mongoose */ \"mongoose\");\n\nconst imgSchema = mongoose.Schema({\n  fileName: {\n    type: String,\n    required: true\n  },\n  data: {\n    type: Buffer,\n    required: true\n  },\n  contentType: {\n    type: String,\n    required: true\n  }\n});\nmodule.exports = mongoose.model('Img', imgSchema);\n\n//# sourceURL=webpack:///./models/image.js?");
+
+/***/ }),
+
+/***/ "./models/note.js":
+/*!************************!*\
+  !*** ./models/note.js ***!
+  \************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+eval("const mongoose = __webpack_require__(/*! mongoose */ \"mongoose\");\n\nconst noteSchema = mongoose.Schema({\n  title: {\n    type: String,\n    required: true\n  },\n  description: {\n    type: String,\n    required: true\n  },\n  imageId: {\n    type: String,\n    required: true\n  },\n  userId: {\n    type: String,\n    required: true\n  },\n  privateFlag: {\n    type: Boolean,\n    required: true\n  }\n});\nmodule.exports = mongoose.model('Note', noteSchema);\n\n//# sourceURL=webpack:///./models/note.js?");
+
+/***/ }),
+
+/***/ "./models/user.js":
+/*!************************!*\
+  !*** ./models/user.js ***!
+  \************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+eval("const mongoose = __webpack_require__(/*! mongoose */ \"mongoose\");\n\nconst uniqueValidator = __webpack_require__(/*! mongoose-unique-validator */ \"mongoose-unique-validator\");\n\nconst userSchema = mongoose.Schema({\n  email: {\n    type: String,\n    required: true,\n    unique: true\n  },\n  password: {\n    type: String,\n    required: true\n  }\n});\nuserSchema.plugin(uniqueValidator);\nmodule.exports = mongoose.model('User', userSchema);\n\n//# sourceURL=webpack:///./models/user.js?");
+
+/***/ }),
+
+/***/ "./routes/note.js":
+/*!************************!*\
+  !*** ./routes/note.js ***!
+  \************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+eval("const express = __webpack_require__(/*! express */ \"express\");\n\nconst router = express.Router();\n\nconst auth = __webpack_require__(/*! ../middleware/auth */ \"./middleware/auth.js\");\n\nconst multer = __webpack_require__(/*! ../middleware/multer-config */ \"./middleware/multer-config.js\");\n\nconst noteCtrl = __webpack_require__(/*! ../controllers/note */ \"./controllers/note.js\"); // const AuthMiddleware = (req, res, next) => {\n//   if(req.headers.hasOwnProperty(\"authorization\")) {\n//     return auth(req, res, next);\n//   } else {\n//       next();\n//   }\n// }\n\n\nrouter.get('/', auth, noteCtrl.getNotes);\nrouter.post('/', auth, multer, noteCtrl.createNote); // router.post('/test', auth, multer, noteCtrl.test);\n\nrouter.get('/:id', auth, noteCtrl.getOneNote);\nrouter.put('/:id', auth, noteCtrl.modifyNote);\nrouter.delete('/:id', auth, noteCtrl.deleteNote);\nmodule.exports = router;\n\n//# sourceURL=webpack:///./routes/note.js?");
+
+/***/ }),
+
+/***/ "./routes/user.js":
+/*!************************!*\
+  !*** ./routes/user.js ***!
+  \************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+eval("const express = __webpack_require__(/*! express */ \"express\");\n\nconst router = express.Router();\n\nconst userCtrl = __webpack_require__(/*! ../controllers/user */ \"./controllers/user.js\");\n\nrouter.post('/signup', userCtrl.signup);\nrouter.post('/login', userCtrl.login);\nmodule.exports = router;\n\n//# sourceURL=webpack:///./routes/user.js?");
+
+/***/ }),
+
+/***/ "./server/app.js":
+/*!***********************!*\
+  !*** ./server/app.js ***!
+  \***********************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+eval("const express = __webpack_require__(/*! express */ \"express\");\n\nconst bodyParser = __webpack_require__(/*! body-parser */ \"body-parser\");\n\nconst mongoose = __webpack_require__(/*! mongoose */ \"mongoose\");\n\nconst noteRoutes = __webpack_require__(/*! ../routes/note */ \"./routes/note.js\");\n\nconst userRoutes = __webpack_require__(/*! ../routes/user */ \"./routes/user.js\");\n\n__webpack_require__(/*! dotenv */ \"dotenv\").config();\n\nconst url = process.env.MONGOLAB_URI;\nconst app = express();\napp.disable(\"X-Powered-By\");\nmongoose.connect(url, {\n  useUnifiedTopology: true,\n  useNewUrlParser: true,\n  useCreateIndex: true\n}).then(() => {\n  console.log('Successfully connected to MongoDB Atlas!');\n}).catch(error => {\n  console.log('Unable to connect to MongoDB Atlas!');\n  console.error(error);\n});\napp.use((req, res, next) => {\n  res.setHeader('Access-Control-Allow-Origin', '*');\n  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content, Accept, Content-Type, Authorization');\n  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');\n  next();\n});\napp.use(bodyParser.json());\napp.use('/api/note', noteRoutes);\napp.use('/api/auth', userRoutes);\nmodule.exports = app;\n\n//# sourceURL=webpack:///./server/app.js?");
+
+/***/ }),
+
+/***/ "./server/server.js":
+/*!**************************!*\
+  !*** ./server/server.js ***!
+  \**************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+eval("const http = __webpack_require__(/*! http */ \"http\");\n\nconst app = __webpack_require__(/*! ./app */ \"./server/app.js\"); // const mongoose = require('mongoose');\n\n\n__webpack_require__(/*! dotenv */ \"dotenv\").config();\n\nconst normalizePort = val => {\n  const port = parseInt(val, 10);\n\n  if (isNaN(port)) {\n    return val;\n  }\n\n  if (port >= 0) {\n    return port;\n  }\n\n  return false;\n};\n\nconst port = normalizePort(process.env.PORT || '3000');\napp.set('port', port);\n\nconst errorHandler = error => {\n  if (error.syscall !== 'listen') {\n    throw error;\n  }\n\n  const address = server.address();\n  const bind = typeof address === 'string' ? 'pipe ' + address : 'port: ' + port;\n\n  switch (error.code) {\n    case 'EACCES':\n      console.error(bind + ' requires elevated privileges.');\n      process.exit(1);\n      break;\n\n    case 'EADDRINUSE':\n      console.error(bind + ' is already in use.');\n      process.exit(1);\n      break;\n\n    default:\n      throw error;\n  }\n};\n\nconst server = http.createServer(app);\nserver.on('error', errorHandler);\nserver.on('listening', () => {\n  const address = server.address();\n  const bind = typeof address === 'string' ? 'pipe ' + address : 'port ' + port;\n  console.log('Listening on ' + bind);\n});\nserver.listen(port);\n\n//# sourceURL=webpack:///./server/server.js?");
+
+/***/ }),
+
+/***/ 0:
+/*!***********************************************!*\
+  !*** multi babel-polyfill ./server/server.js ***!
+  \***********************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+eval("__webpack_require__(/*! babel-polyfill */\"babel-polyfill\");\nmodule.exports = __webpack_require__(/*! D:\\Work\\GIT\\Javascript\\backendapi\\server\\server.js */\"./server/server.js\");\n\n\n//# sourceURL=webpack:///multi_babel-polyfill_./server/server.js?");
+
+/***/ }),
+
+/***/ "babel-polyfill":
+/*!*********************************!*\
+  !*** external "babel-polyfill" ***!
+  \*********************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+eval("module.exports = require(\"babel-polyfill\");\n\n//# sourceURL=webpack:///external_%22babel-polyfill%22?");
+
+/***/ }),
+
+/***/ "bcrypt":
+/*!*************************!*\
+  !*** external "bcrypt" ***!
+  \*************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+eval("module.exports = require(\"bcrypt\");\n\n//# sourceURL=webpack:///external_%22bcrypt%22?");
+
+/***/ }),
+
+/***/ "body-parser":
+/*!******************************!*\
+  !*** external "body-parser" ***!
+  \******************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+eval("module.exports = require(\"body-parser\");\n\n//# sourceURL=webpack:///external_%22body-parser%22?");
+
+/***/ }),
+
+/***/ "dotenv":
+/*!*************************!*\
+  !*** external "dotenv" ***!
+  \*************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+eval("module.exports = require(\"dotenv\");\n\n//# sourceURL=webpack:///external_%22dotenv%22?");
+
+/***/ }),
+
+/***/ "express":
+/*!**************************!*\
+  !*** external "express" ***!
+  \**************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+eval("module.exports = require(\"express\");\n\n//# sourceURL=webpack:///external_%22express%22?");
+
+/***/ }),
+
+/***/ "http":
+/*!***********************!*\
+  !*** external "http" ***!
+  \***********************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+eval("module.exports = require(\"http\");\n\n//# sourceURL=webpack:///external_%22http%22?");
+
+/***/ }),
+
+/***/ "jsonwebtoken":
+/*!*******************************!*\
+  !*** external "jsonwebtoken" ***!
+  \*******************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+eval("module.exports = require(\"jsonwebtoken\");\n\n//# sourceURL=webpack:///external_%22jsonwebtoken%22?");
+
+/***/ }),
+
+/***/ "mongoose":
+/*!***************************!*\
+  !*** external "mongoose" ***!
+  \***************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+eval("module.exports = require(\"mongoose\");\n\n//# sourceURL=webpack:///external_%22mongoose%22?");
+
+/***/ }),
+
+/***/ "mongoose-unique-validator":
+/*!********************************************!*\
+  !*** external "mongoose-unique-validator" ***!
+  \********************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+eval("module.exports = require(\"mongoose-unique-validator\");\n\n//# sourceURL=webpack:///external_%22mongoose-unique-validator%22?");
+
+/***/ }),
+
+/***/ "multer":
+/*!*************************!*\
+  !*** external "multer" ***!
+  \*************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+eval("module.exports = require(\"multer\");\n\n//# sourceURL=webpack:///external_%22multer%22?");
+
+/***/ })
+
+/******/ });

@@ -3,12 +3,14 @@ const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const noteRoutes = require('../routes/note');
 const userRoutes = require('../routes/user');
+require('dotenv').config()
+const url = process.env.MONGOLAB_URI;
 
 const app = express();
 app.disable("X-Powered-By")
 
 mongoose.connect(
-  'mongodb+srv://anv:IPTiGtk3bPsMxAk7@adb-2mbax.mongodb.net/test?retryWrites=true&w=majority',
+  url,
   {
     useUnifiedTopology: true, 
     useNewUrlParser: true, 
